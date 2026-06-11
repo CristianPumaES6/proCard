@@ -7,8 +7,10 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  // url      = env("DATABASE_URL")
-  url      = "file:./dev.db"
+  // La ruta de la BD se toma de la variable de entorno DATABASE_URL.
+  // Local:   DATABASE_URL="file:./dev.db"        -> prisma/dev.db
+  // Docker:  DATABASE_URL="file:/app/data/dev.db" -> volumen persistente
+  url      = env("DATABASE_URL")
 }
 
 model Profile {

@@ -1,0 +1,41 @@
+# ============================================================================
+#  proCard - docker-compose
+#  Levanta la app completa (frontend + backend) en un solo contenedor.
+# ============================================================================
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Déjalo vacío para que el front use rutas relativas contra su propio
+        # backend. Solo cámbialo si sirves el front y el backend por separado.
+        NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:-}"
+    image: procard:latest
+    container_name: procard
+    restart: unless-stopped
+    ports:
+      # Host:Contenedor  -> cambia el lado izquierdo si el 3000 está ocupado.
+      - "${PORT:-3000}:3000"
+    environment:
+      # --- Base de datos (SQLite dentro del volumen persistente) ---
+      DATABASE_URL: "file:/app/db/dev.db"
+      # --- NextAuth ---
+      AUTH_SECRET: "${AUTH_SECRET:?Define AUTH_SECRET en tu .env}"
+      AUTH_TRUST_HOST: "true"
+      # --- Google OAuth (opcional; el login por credenciales funciona sin esto) ---
+      AUTH_GOOGLE_ID: "${AUTH_GOOGLE_ID:-}"
+      AUTH_GOOGLE_SECRET: "${AUTH_GOOGLE_SECRET:-}"
+      # --- Runtime ---
+      PORT: "3000"
+      # Pon RUN_SEED=true la PRIMERA vez para cargar datos de ejemplo.
+      RUN_SEED: "${RUN_SEED:-false}"
+    volumes:
+      # Base de datos SQLite persistente.
+      - procard-db:/app/db
+      # Imágenes / archivos subidos por los usuarios.
+      - procard-uploads:/app/public/uploads
+
+volumes:
+  procard-db:
+  procard-uploads:

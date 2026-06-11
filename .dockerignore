@@ -1,0 +1,30 @@
+# Dependencias y artefactos (se reinstalan/recompilan dentro de la imagen)
+node_modules
+.next
+out
+build
+coverage
+
+# Base de datos local y uploads locales (se persisten en volúmenes Docker)
+prisma/dev.db
+prisma/*.db
+public/uploads/*
+
+# Entorno y secretos
+.env
+.env.*
+env
+
+# Git y metadatos
+.git
+.gitignore
+*.tsbuildinfo
+next-env.d.ts
+
+# Documentación y notas (no necesarias para construir la imagen)
+*.md
+
+# Editores / SO
+.vscode
+.idea
+.DS_Store

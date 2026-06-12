@@ -10,6 +10,13 @@ import { useToast } from "@/components/ui/toast";
 import { CreateProfileModal } from "@/components/CreateProfileModal";
 import { saveSearchQuery, importProfile } from "@/lib/actions";
 
+const INDUSTRY_FILTERS = [
+    { key: "", label: "Todos", chip: "border-white/10 text-slate-300" },
+    { key: "Tech", label: "Tecnología", chip: "border-cyan-500/40 text-cyan-400" },
+    { key: "Legal", label: "Legal", chip: "border-amber-500/40 text-amber-400" },
+    { key: "Design", label: "Creative Design", chip: "border-fuchsia-500/40 text-fuchsia-400" },
+];
+
 export default function ShowcasePage() {
     const { data: session } = useSession();
     const { showToast } = useToast();
@@ -17,6 +24,7 @@ export default function ShowcasePage() {
     const [filteredProfiles, setFilteredProfiles] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
+    const [industryFilter, setIndustryFilter] = useState("");
     const [recentSearches, setRecentSearches] = useState<string[]>([]);
     const [showRecent, setShowRecent] = useState(false);
 
@@ -25,7 +33,6 @@ export default function ShowcasePage() {
     const fetchProfiles = async () => {
         const data = await getClientShowcaseProfiles();
         setProfiles(data);
-        setFilteredProfiles(data);
         setLoading(false);
     };
 
@@ -35,24 +42,31 @@ export default function ShowcasePage() {
         if (storedSearches) {
             setRecentSearches(JSON.parse(storedSearches));
         }
+        // Filtro inicial por módulo desde la URL: /showcase?industry=Design
+        const params = new URLSearchParams(window.location.search);
+        const industry = params.get("industry");
+        if (industry && ["Tech", "Legal", "Design"].includes(industry)) {
+            setIndustryFilter(industry);
+        }
     }, []);
+
+    // Filtro combinado: texto + industria
+    useEffect(() => {
+        const lowerQuery = searchQuery.toLowerCase();
+        const filtered = profiles.filter(p => {
+            const matchesIndustry = !industryFilter || p.industry === industryFilter;
+            const matchesQuery = !searchQuery.trim() ||
+                p.name?.toLowerCase().includes(lowerQuery) ||
+                p.headline?.toLowerCase().includes(lowerQuery) ||
+                p.industry?.toLowerCase().includes(lowerQuery) ||
+                p.location?.toLowerCase().includes(lowerQuery);
+            return matchesIndustry && matchesQuery;
+        });
+        setFilteredProfiles(filtered);
+    }, [profiles, searchQuery, industryFilter]);
 
     const handleSearch = (query: string) => {
         setSearchQuery(query);
-        const lowerQuery = query.toLowerCase();
-
-        if (!query.trim()) {
-            setFilteredProfiles(profiles);
-            return;
-        }
-
-        const filtered = profiles.filter(p =>
-            p.name?.toLowerCase().includes(lowerQuery) ||
-            p.headline?.toLowerCase().includes(lowerQuery) ||
-            p.industry?.toLowerCase().includes(lowerQuery) ||
-            p.location?.toLowerCase().includes(lowerQuery)
-        );
-        setFilteredProfiles(filtered);
     };
 
     const submitSearch = async () => {
@@ -126,8 +140,9 @@ export default function ShowcasePage() {
             </div>
 
             <div className="relative z-10 p-4 md:p-8 lg:p-12 max-w-7xl mx-auto space-y-12">
-                <header className="relative pt-12 pb-8 px-8 rounded-3xl border border-white/5 bg-white/[0.02] backdrop-blur-xl overflow-visible group">
-                    <div className="absolute top-0 right-0 p-8 z-20 flex items-center gap-4">
+                <header className="relative pt-8 sm:pt-12 pb-8 px-5 sm:px-8 rounded-3xl border border-white/5 bg-white/[0.02] backdrop-blur-xl overflow-visible group">
+                    {/* Acciones: flujo normal en móvil, esquina en escritorio */}
+                    <div className="relative sm:absolute sm:top-0 sm:right-0 sm:p-8 z-20 flex flex-wrap items-center gap-3 sm:gap-4 mb-6 sm:mb-0">
                         {session?.user && (
                             <>
                                 <input
@@ -140,10 +155,10 @@ export default function ShowcasePage() {
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
                                     className="flex items-center gap-2 bg-slate-900/50 text-slate-300 px-4 py-2.5 rounded-lg hover:bg-slate-800 hover:text-white transition-all border border-white/10 font-bold group backdrop-blur-sm"
-                                    title="Importar Perfil JSON"
+                                    title="Importar CV desde JSON (con imágenes incluidas)"
                                 >
                                     <Upload size={18} className="group-hover:scale-110 transition-transform" />
-                                    <span className="hidden sm:inline text-xs uppercase tracking-widest">Importar</span>
+                                    <span className="text-xs uppercase tracking-widest">Importar</span>
                                 </button>
                                 <CreateProfileModal onSuccess={fetchProfiles} />
                             </>
@@ -212,14 +227,32 @@ export default function ShowcasePage() {
                     <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-cyan-500/10 rounded-full blur-[80px] group-hover:bg-cyan-500/20 transition-colors duration-700 pointer-events-none" />
                 </header>
 
-                <div className="space-y-12">
-                    <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                        <h2 className="text-sm font-mono text-slate-500 uppercase tracking-widest">
+                <div className="space-y-8 sm:space-y-12">
+                    {/* Filtros por módulo / industria */}
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                        {INDUSTRY_FILTERS.map((f) => (
+                            <button
+                                key={f.key}
+                                onClick={() => setIndustryFilter(f.key)}
+                                className={`px-4 py-2 rounded-full border text-xs font-mono uppercase tracking-widest transition-all hover:scale-105 active:scale-95 ${f.chip} ${industryFilter === f.key
+                                    ? "bg-white/10 shadow-[0_0_15px_rgba(255,255,255,0.08)] border-opacity-100"
+                                    : "bg-transparent opacity-60 hover:opacity-100"
+                                    }`}
+                            >
+                                {f.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-4">
+                        <h2 className="text-xs sm:text-sm font-mono text-slate-500 uppercase tracking-widest">
                             {filteredProfiles.length} Perfiles Encontrados // Total: {profiles.length}
                         </h2>
                         <div className="flex gap-4 text-[10px] font-mono text-slate-600">
-                            <span className={searchQuery ? "text-cyan-500" : ""}>FILTRO: {searchQuery ? "ACTIVO" : "NINGUNO"}</span>
-                            <span>Orden: Fecha de Creación</span>
+                            <span className={searchQuery || industryFilter ? "text-cyan-500" : ""}>
+                                FILTRO: {industryFilter || (searchQuery ? "BÚSQUEDA" : "NINGUNO")}
+                            </span>
+                            <span className="hidden sm:inline">Orden: Fecha de Creación</span>
                         </div>
                     </div>
 

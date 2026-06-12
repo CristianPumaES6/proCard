@@ -226,6 +226,11 @@ export async function createProfile(formData: FormData) {
             pushStat('stat_level', 'LEVEL')
             pushStat('stat_stack', 'STACK')
             pushStat('stat_repos', 'REPOS')
+        } else if (rawData.industry === 'Design') {
+            pushStat('stat_experience', 'EXPERIENCIA')
+            pushStat('stat_proyectos', 'PROYECTOS')
+            pushStat('stat_clientes', 'CLIENTES')
+            pushStat('stat_especialidad', 'ESPECIALIDAD')
         } else {
             pushStat('stat_ciclo', 'CICLO')
             pushStat('stat_merito', 'MÉRITO')
@@ -436,6 +441,11 @@ export async function updateProfile(id: string, formData: FormData) {
                 pushStat('stat_level', 'LEVEL')
                 pushStat('stat_stack', 'STACK')
                 pushStat('stat_repos', 'REPOS')
+            } else if (rawData.industry === 'Design') {
+                pushStat('stat_experience', 'EXPERIENCIA')
+                pushStat('stat_proyectos', 'PROYECTOS')
+                pushStat('stat_clientes', 'CLIENTES')
+                pushStat('stat_especialidad', 'ESPECIALIDAD')
             } else {
                 pushStat('stat_ciclo', 'CICLO')
                 pushStat('stat_merito', 'MÉRITO')
@@ -688,6 +698,58 @@ export async function updateProfile(id: string, formData: FormData) {
     }
 }
 
+/**
+ * Devuelve todos los currículums del usuario logueado (multi-CV).
+ * Permite tener, por ejemplo, un CV como especialista Frontend y otro Backend.
+ */
+export async function getMyProfiles() {
+    const session = await auth();
+    if (!session?.user?.id) return [];
+
+    try {
+        return await db.profile.findMany({
+            where: { userId: session.user.id },
+            include: {
+                attributes: true,
+                socials: true,
+                experiences: { include: { highlights: true } },
+                projects: { include: { tags: true, images: true }, orderBy: { order: 'asc' } },
+                skillCategories: { include: { items: true } },
+                education: { orderBy: { order: 'asc' } },
+                certifications: { orderBy: { order: 'asc' } },
+                workExperiences: { include: { images: true }, orderBy: { order: 'asc' } }
+            }
+        });
+    } catch (error) {
+        console.error("Failed to fetch my profiles:", error);
+        return [];
+    }
+}
+
+export async function deleteProfile(id: string) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return { success: false, error: 'Unauthorized' };
+    }
+
+    try {
+        const profile = await db.profile.findUnique({ where: { id } });
+        if (!profile) return { success: false, error: 'Profile not found' };
+        if (profile.userId !== session.user.id) {
+            return { success: false, error: 'Forbidden: You can only delete your own profiles.' };
+        }
+
+        // Las relaciones se eliminan en cascada (onDelete: Cascade en el schema)
+        await db.profile.delete({ where: { id } });
+        revalidatePath('/showcase');
+        revalidatePath('/dashboard');
+        return { success: true };
+    } catch (error) {
+        console.error("Delete profile error:", error);
+        return { success: false, error: 'Database error while deleting profile.' };
+    }
+}
+
 export async function saveSearchQuery(query: string) {
     if (!query.trim()) return;
     try {
@@ -701,6 +763,38 @@ export async function saveSearchQuery(query: string) {
     }
 }
 
+/**
+ * Restaura los assets embebidos (base64) de un export JSON al disco
+ * y devuelve un mapa { urlOriginal -> urlNueva } para re-vincular imágenes.
+ * Formato esperado: data._assets = { "/uploads/foo.png": "data:image/png;base64,..." }
+ */
+async function restoreEmbeddedAssets(assets: Record<string, string> | undefined): Promise<Map<string, string>> {
+    const urlMap = new Map<string, string>();
+    if (!assets || typeof assets !== 'object') return urlMap;
+
+    const uploadDir = join(process.cwd(), 'public', 'uploads');
+    await mkdir(uploadDir, { recursive: true });
+
+    for (const [originalUrl, dataUri] of Object.entries(assets)) {
+        try {
+            if (typeof dataUri !== 'string') continue;
+            const match = /^data:([a-zA-Z0-9/+.-]+);base64,(.+)$/.exec(dataUri);
+            if (!match) continue;
+
+            const buffer = Buffer.from(match[2], 'base64');
+            // Conservar la extensión original; nombre nuevo para evitar colisiones
+            const originalName = originalUrl.split('/').pop() || 'asset';
+            const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const filename = `${Date.now()}-import-${Math.random().toString(36).substring(7)}-${safeName}`;
+            await writeFile(join(uploadDir, filename), buffer);
+            urlMap.set(originalUrl, `/uploads/${filename}`);
+        } catch (e) {
+            console.error(`Failed to restore asset ${originalUrl}:`, e);
+        }
+    }
+    return urlMap;
+}
+
 export async function importProfile(jsonContent: string) {
     const session = await auth();
     if (!session || !session.user || !session.user.id) {
@@ -709,7 +803,10 @@ export async function importProfile(jsonContent: string) {
 
     try {
         console.log("Importing profile, content length:", jsonContent?.length);
-        const data = JSON.parse(jsonContent);
+        const parsed = JSON.parse(jsonContent);
+        // Soportar tanto el formato nuevo { profile, _assets } como el JSON plano del perfil
+        const data = parsed.profile || parsed;
+        const assets: Record<string, string> | undefined = parsed._assets || data._assets;
         console.log("Parsed data keys:", Object.keys(data));
 
         // Basic validation with specific error messages
@@ -717,11 +814,16 @@ export async function importProfile(jsonContent: string) {
         if (!data.email) return { success: false, error: 'Invalid Structure: Missing field "email".' };
         if (!data.industry) return { success: false, error: 'Invalid Structure: Missing field "industry".' };
 
+        // Restaurar imágenes embebidas y preparar el re-mapeo de URLs
+        const urlMap = await restoreEmbeddedAssets(assets);
+        const remap = (url: string | null | undefined): string | null =>
+            url ? (urlMap.get(url) || url) : null;
+
         // Clean up data for Prisma creation
         // We remove IDs to create new records
         // We remove userId to assign to current user
         const {
-            id, userId, createdAt, updatedAt, slug,
+            id, userId, createdAt, updatedAt, slug, _assets,
             attributes, socials, experiences, projects, skillCategories, education, certifications, workExperiences,
             ...primitiveFields
         } = data;
@@ -765,7 +867,7 @@ export async function importProfile(jsonContent: string) {
                         description: x.description,
                         solution: x.solution,
                         outcome: x.outcome,
-                        imageUrl: x.imageUrl,
+                        imageUrl: remap(x.imageUrl),
                         url: x.url,
                         highlight: x.highlight,
                         order: x.order || 0,
@@ -773,7 +875,7 @@ export async function importProfile(jsonContent: string) {
                             create: x.tags?.map((t: any) => ({ name: t.name })) || []
                         },
                         images: {
-                            create: x.images?.map((img: any) => ({ url: img.url })) || []
+                            create: x.images?.map((img: any) => ({ url: remap(img.url) })) || []
                         }
                     })) || []
                 },
@@ -791,7 +893,7 @@ export async function importProfile(jsonContent: string) {
                         degree: x.degree,
                         period: x.period,
                         status: x.status,
-                        logoUrl: x.logoUrl,
+                        logoUrl: remap(x.logoUrl),
                         order: x.order || 0
                     })) || []
                 },
@@ -805,16 +907,16 @@ export async function importProfile(jsonContent: string) {
                     })) || []
                 },
                 workExperiences: {
-                    create: data.workExperiences?.map((x: any) => ({
+                    create: workExperiences?.map((x: any) => ({
                         company: x.company,
                         role: x.role,
                         period: x.period,
                         responsibilities: x.responsibilities,
                         achievements: x.achievements,
-                        companyLogoUrl: x.companyLogoUrl,
+                        companyLogoUrl: remap(x.companyLogoUrl),
                         order: x.order || 0,
                         images: {
-                            create: x.images?.map((img: any) => ({ url: img.url })) || []
+                            create: x.images?.map((img: any) => ({ url: remap(img.url) })) || []
                         }
                     })) || []
                 }

@@ -12,6 +12,8 @@ import { Projects as LandingProjects } from "@/components/sections/projects";
 import { Experience } from "@/components/sections/experience";
 import { LandingStack } from "@/components/sections/landing-stack";
 import { Footer as LandingFooter } from "@/components/layout/footer";
+import { DesignShowcase } from "@/components/sections/DesignShowcase";
+import { CursorVariant } from "@/components/effects/CursorFX";
 
 const THEMES = {
     Tech: {
@@ -94,6 +96,16 @@ export default function ProfileClientView({ id }: { id: string }) {
 
     if (!profile) return notFound();
 
+    // Módulo CREATIVE DESIGN: vitrina propia + cursor de pincel mágico
+    if (profile.industry === 'Design') {
+        return (
+            <>
+                <CursorVariant variant="brush" />
+                <DesignShowcase profile={profile} />
+            </>
+        );
+    }
+
     const isTech = profile.industry === 'Tech';
     const theme = THEMES[profile.industry as keyof typeof THEMES] || THEMES.Tech;
     const expAttr = profile.attributes?.find((a: any) => a.label === 'EXPERIENCIA');
@@ -120,6 +132,7 @@ export default function ProfileClientView({ id }: { id: string }) {
 
         return (
             <div className="bg-[#0B0F15] min-h-screen text-slate-300">
+                <CursorVariant variant="electric" />
                 <Hero profile={profile} />
                 <About specialties={specialties?.length > 0 ? specialties : undefined} />
                 <LandingStack
@@ -141,6 +154,7 @@ export default function ProfileClientView({ id }: { id: string }) {
 
     return (
         <div className={theme.page}>
+            <CursorVariant variant="gavel" />
             <main className={theme.container}>
                 <header className={theme.headerWrapper}>
                     <div className="relative py-12 text-center">
@@ -323,9 +337,8 @@ export default function ProfileClientView({ id }: { id: string }) {
                                 </div>
                             )}
                         </div>
-                    </div>
 
-                    <div className="lg:col-span-4 space-y-12">
+                        <div className="lg:col-span-4 space-y-12">
                         <section>
                             <h2 className={theme.sectionHeading}>Area of Expertise</h2>
                             <div className="space-y-8">
@@ -399,6 +412,7 @@ export default function ProfileClientView({ id }: { id: string }) {
                                 </div>
                             </section>
                         )}
+                        </div>
                     </div>
                 </div>
             </main>

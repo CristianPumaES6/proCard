@@ -5,6 +5,28 @@ profesionales** (perfiles tipo CV: experiencia, proyectos, educación,
 certificaciones, skills, etc.). Cada perfil se puede ver como una vitrina
 pública y exportar como CV imprimible.
 
+## ✨ Funcionalidades principales
+
+- **3 módulos por industria**, cada uno con su vitrina y estética propia:
+  - 🖥️ **Tecnología** — estilo terminal/cyberpunk con efecto de *electricidad* en el cursor.
+  - ⚖️ **Legal** — estilo editorial elegante con efecto de *martillo legal* (gavel) al hacer click.
+  - 🎨 **Creative Design** — galería de portafolio con aurora animada y *pincel mágico* en el cursor.
+  - El home tiene un efecto de cursor de *aurora boreal* global ([CursorFX.tsx](components/effects/CursorFX.tsx)).
+- **Multi-CV por usuario**: un mismo usuario puede tener varios currículums
+  (ej.: uno como especialista Frontend y otro como Backend). Se gestionan desde
+  el dashboard **“Mis CVs”** (`/dashboard`, requiere login): crear, editar,
+  exportar, importar y eliminar.
+- **Export JSON con imágenes**: `GET /api/profiles/[id]/export` (solo dueño)
+  genera un JSON portable `{ version, profile, _assets }` donde `_assets`
+  embebe cada imagen de `/uploads` como data-URI base64.
+- **Import JSON**: al importar (dashboard o showcase) se restauran las
+  imágenes embebidas a disco y se re-mapean las URLs automáticamente.
+  Acepta también JSONs antiguos sin `_assets`.
+- **Export PDF**: el botón *Exportar PDF* abre la vista `/cv/[id]` (A4) con
+  estilos `@media print` (saltos de página controlados, sección **Portafolio
+  Visual** con las imágenes de proyectos en página propia). En el diálogo de
+  impresión se elige “Guardar como PDF”.
+
 Está construida como una aplicación **full‑stack monolítica con Next.js**: el
 mismo servidor renderiza el frontend y expone el backend (API + Server Actions).
 
@@ -60,19 +82,23 @@ proCard/
 │   ├── layout.tsx            # Layout raíz (providers, fuentes, navbar/footer)
 │   ├── login/                # Página de inicio de sesión
 │   ├── register/             # Página de registro
+│   ├── dashboard/            # "Mis CVs": gestión multi-currículum (protegido)
 │   ├── showcase/
-│   │   ├── page.tsx          # Listado de vitrinas
-│   │   └── [id]/             # Vitrina pública de un perfil
-│   ├── cv/[id]/              # Vista de CV imprimible de un perfil
+│   │   ├── page.tsx          # Listado de vitrinas (+ filtro por industria)
+│   │   └── [id]/             # Vitrina pública de un perfil (Tech/Legal/Design)
+│   ├── cv/[id]/              # Vista de CV imprimible / export PDF
 │   └── api/                  # BACKEND (Route Handlers)
 │       ├── auth/[...nextauth]/route.ts   # Endpoints de NextAuth
 │       ├── profiles/route.ts             # GET (listar) / POST (crear) perfiles
 │       ├── profiles/[id]/route.ts        # GET / PUT / DELETE de un perfil
+│       ├── profiles/[id]/export/route.ts # Export JSON con imágenes (base64)
 │       └── ...
 │   └── uploads/[filename]/route.ts       # Sirve archivos subidos desde disco
 │
 ├── components/               # Componentes de UI
+│   ├── effects/CursorFX.tsx  # Efectos de cursor (aurora/electric/gavel/brush)
 │   ├── sections/             # Secciones de página (hero, proyectos, vitrinas…)
+│   │   └── DesignShowcase.tsx# Vitrina del módulo Creative Design
 │   ├── ui/                   # Botones, tarjetas, toasts, iconos…
 │   ├── layout/               # Navbar y footer
 │   └── *Modal.tsx            # Modales para crear / editar perfiles

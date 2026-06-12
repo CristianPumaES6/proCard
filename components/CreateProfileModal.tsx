@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { createClientProfile } from '@/lib/api'
-import { X, UserPlus, Briefcase, Scale, Server, Link2, ShieldAlert, Database, Smartphone, Users, Globe, Building, FolderGit2, Image as ImageIcon, Plus, Trash2, CheckCircle2, GraduationCap, Award, Pencil, Gavel, FileText, GripVertical } from 'lucide-react'
+import { X, UserPlus, Briefcase, Scale, Server, Link2, ShieldAlert, Database, Smartphone, Users, Globe, Building, FolderGit2, Image as ImageIcon, Plus, Trash2, CheckCircle2, GraduationCap, Award, Pencil, Gavel, FileText, GripVertical, Palette } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Reorder } from 'framer-motion'
-import { TECH_SPECIALTIES, LEGAL_SPECIALTIES, TECH_STACK_CATEGORIES, LEGAL_STACK_CATEGORIES, TECH_OPTIONS, LEGAL_OPTIONS, STATS_CONFIG } from '@/data/profile-constants'
+import { getSpecialties, getStackCategories, getTagOptions, getStatsConfig } from '@/data/profile-constants'
 
 
 export function CreateProfileModal({ onSuccess, trigger }: { onSuccess?: () => void, trigger?: React.ReactNode }) {
@@ -269,7 +269,7 @@ export function CreateProfileModal({ onSuccess, trigger }: { onSuccess?: () => v
 
                         {/* STEP 1: BASIC INFO */}
                         <div className={step === 1 ? 'block space-y-6' : 'hidden'}>
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                                 <label className="cursor-pointer group">
                                     <input type="radio" name="industry" value="Tech" className="peer sr-only" checked={industry === 'Tech'} onChange={() => setIndustry('Tech')} />
                                     <div className="border border-white/10 group-hover:border-cyan-500/50 peer-checked:border-cyan-500 peer-checked:bg-cyan-500/10 rounded-2xl p-6 text-center transition-all bg-slate-950/40 backdrop-blur-sm">
@@ -282,6 +282,13 @@ export function CreateProfileModal({ onSuccess, trigger }: { onSuccess?: () => v
                                     <div className="border border-white/10 group-hover:border-indigo-500/50 peer-checked:border-indigo-500 peer-checked:bg-indigo-500/10 rounded-2xl p-6 text-center transition-all bg-slate-950/40 backdrop-blur-sm">
                                         <Scale size={32} className="mx-auto mb-3 text-slate-500 peer-checked:text-indigo-400 group-hover:scale-110 transition-transform" />
                                         <span className="block font-bold text-slate-400 peer-checked:text-white uppercase tracking-widest text-xs">Legal Services</span>
+                                    </div>
+                                </label>
+                                <label className="cursor-pointer group">
+                                    <input type="radio" name="industry" value="Design" className="peer sr-only" checked={industry === 'Design'} onChange={() => setIndustry('Design')} />
+                                    <div className="border border-white/10 group-hover:border-fuchsia-500/50 peer-checked:border-fuchsia-500 peer-checked:bg-fuchsia-500/10 rounded-2xl p-6 text-center transition-all bg-slate-950/40 backdrop-blur-sm">
+                                        <Palette size={32} className="mx-auto mb-3 text-slate-500 peer-checked:text-fuchsia-400 group-hover:scale-110 transition-transform" />
+                                        <span className="block font-bold text-slate-400 peer-checked:text-white uppercase tracking-widest text-xs">Creative Design</span>
                                     </div>
                                 </label>
                             </div>
@@ -334,7 +341,7 @@ export function CreateProfileModal({ onSuccess, trigger }: { onSuccess?: () => v
                         {/* STEP 2: STATS */}
                         <div className={step === 2 ? 'block space-y-6' : 'hidden'}>
                             <div className="grid grid-cols-2 gap-6">
-                                {(industry === 'Tech' ? STATS_CONFIG.Tech : STATS_CONFIG.Legal).map((stat) => (
+                                {getStatsConfig(industry).map((stat) => (
                                     <div key={stat.name}>
                                         <label className="block text-xs font-bold text-cyan-500/60 uppercase tracking-widest mb-2">{stat.label}</label>
                                         <input
@@ -350,7 +357,7 @@ export function CreateProfileModal({ onSuccess, trigger }: { onSuccess?: () => v
                         {/* STEP 3: TECH SPECIALTIES (Grid) */}
                         <div className={step === 3 ? 'block' : 'hidden'}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {(industry === 'Tech' ? TECH_SPECIALTIES : LEGAL_SPECIALTIES).map((spec) => {
+                                {getSpecialties(industry).map((spec) => {
                                     const Icon = spec.icon
                                     return (
                                         <label key={spec.id} className="cursor-pointer relative group">
@@ -378,7 +385,7 @@ export function CreateProfileModal({ onSuccess, trigger }: { onSuccess?: () => v
                         {/* STEP 4: TECH STACK (New) */}
                         <div className={step === 4 ? 'block' : 'hidden'}>
                             <div className="grid grid-cols-2 gap-6">
-                                {Object.entries(industry === 'Tech' ? TECH_STACK_CATEGORIES : LEGAL_STACK_CATEGORIES).map(([catName, items]) => (
+                                {Object.entries(getStackCategories(industry)).map(([catName, items]) => (
                                     <div key={catName} className="bg-slate-950 p-5 rounded-2xl border border-white/10 shadow-lg">
                                         <h4 className="text-[10px] font-bold text-cyan-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                                             <div className="w-1 h-3 bg-cyan-500 rounded-full" />
@@ -637,7 +644,7 @@ export function CreateProfileModal({ onSuccess, trigger }: { onSuccess?: () => v
                                     <div className="space-y-4">
                                         <label className="block text-xs font-bold text-cyan-500/60 uppercase tracking-widest ml-1">{industry === 'Tech' ? 'Tech Substack' : 'Materias Relacionadas'}</label>
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 h-40 overflow-y-auto border border-white/5 rounded-2xl p-4 bg-slate-950/40 custom-scrollbar shadow-inner">
-                                            {(industry === 'Tech' ? TECH_OPTIONS : LEGAL_OPTIONS).map(tech => (
+                                            {getTagOptions(industry).map(tech => (
                                                 <label key={tech} className="flex items-center gap-3 cursor-pointer group/item">
                                                     <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${currentProject.tags.includes(tech) ? 'bg-cyan-500 border-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.4)]' : 'border-white/20 group-hover/item:border-cyan-500/50'}`}>
                                                         {currentProject.tags.includes(tech) && <CheckCircle2 size={10} className="text-black" />}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Terminal, LogOut, User, ArrowLeft } from "lucide-react";
+import { Menu, X, Terminal, LogOut, User, ArrowLeft, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -87,6 +87,18 @@ export function Navbar() {
 
                     {session?.user ? (
                         <div className="flex items-center gap-4">
+                            <Link
+                                href="/dashboard"
+                                className={cn(
+                                    "flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all hover:scale-105",
+                                    pathname === '/dashboard'
+                                        ? "bg-primary/20 border-primary/40 text-primary"
+                                        : "bg-white/5 border-white/10 text-muted-foreground hover:text-primary hover:border-primary/30"
+                                )}
+                            >
+                                <Layers className="w-4 h-4" />
+                                <span className="text-sm font-bold">Mis CVs</span>
+                            </Link>
                             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
                                 <User className="w-4 h-4 text-primary" />
                                 <span className="text-sm font-bold text-primary">
@@ -141,6 +153,14 @@ export function Navbar() {
                                     <User className="w-4 h-4 text-primary" />
                                     <span className="text-sm font-bold">{session.user.name}</span>
                                 </div>
+                                <Link
+                                    href="/dashboard"
+                                    className="flex items-center gap-2 text-sm font-medium p-2 hover:bg-accent rounded-md"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                >
+                                    <Layers className="w-4 h-4 text-primary" />
+                                    Mis CVs
+                                </Link>
                                 <Button
                                     variant="destructive"
                                     size="sm"

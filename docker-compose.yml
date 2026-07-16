@@ -15,8 +15,8 @@ services:
     container_name: procard
     restart: unless-stopped
     ports:
-      # Host:Contenedor  -> cambia el lado izquierdo si el 3000 está ocupado.
-      - "${PORT:-3000}:3000"
+      # Host:Contenedor  -> cambia el lado izquierdo si el 14021 está ocupado.
+      - "${PORT:-14021}:3000"
     environment:
       # --- Base de datos (SQLite dentro del volumen persistente) ---
       DATABASE_URL: "file:/app/db/dev.db"

@@ -1,0 +1,5 @@
+# Los scripts de shell SIEMPRE deben usar LF, aunque se editen en Windows.
+# Si se cuela un CRLF, el shebang se rompe dentro del contenedor Linux
+# (exec ./docker-entrypoint.sh: no such file or directory).
+*.sh text eol=lf
+docker-entrypoint.sh text eol=lf

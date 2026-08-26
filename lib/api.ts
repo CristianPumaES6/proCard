@@ -4,18 +4,28 @@
  * an external backend API at runtime.
  */
 
+// Helper to check if we are in browser
+const isBrowser = typeof window !== 'undefined';
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/$/, '');
 
+function getEndpoint(path: string): string {
+    // In browser, always use relative path against the current host to prevent DNS/CORS issues
+    if (isBrowser) {
+        return path;
+    }
+    return API_BASE ? `${API_BASE}${path}` : path;
+}
+
 export async function getClientShowcaseProfiles() {
-    const targetUrl = `${API_BASE}/api/profiles`;
+    const targetUrl = getEndpoint('/api/profiles');
     try {
         const res = await fetch(targetUrl);
         if (!res.ok) throw new Error("Network response was not ok");
         return await res.json();
     } catch (error) {
         console.warn(`Fetch profiles error (target: ${targetUrl}):`, error);
-        // Fallback to relative path if API_BASE was provided and failed
-        if (API_BASE) {
+        // Fallback to relative path if external API_BASE was provided and failed
+        if (targetUrl !== '/api/profiles') {
             try {
                 console.log("Attempting fallback to relative path: /api/profiles");
                 const res = await fetch('/api/profiles');
@@ -29,14 +39,14 @@ export async function getClientShowcaseProfiles() {
 }
 
 export async function getClientProfileById(id: string) {
-    const targetUrl = `${API_BASE}/api/profiles/${id}`;
+    const targetUrl = getEndpoint(`/api/profiles/${id}`);
     try {
         const res = await fetch(targetUrl);
         if (!res.ok) throw new Error("Network response was not ok");
         return await res.json();
     } catch (error) {
         console.warn(`Fetch profile error (target: ${targetUrl}):`, error);
-        if (API_BASE) {
+        if (targetUrl !== `/api/profiles/${id}`) {
             try {
                 const res = await fetch(`/api/profiles/${id}`);
                 if (res.ok) return await res.json();
@@ -46,12 +56,8 @@ export async function getClientProfileById(id: string) {
     }
 }
 
-// Helper to check if we are in browser
-const isBrowser = typeof window !== 'undefined';
-
 export async function createClientProfile(formData: FormData) {
-    // Force relative path on client to avoid CORS/Port mismatches
-    const targetUrl = isBrowser ? '/api/profiles' : `${API_BASE}/api/profiles`;
+    const targetUrl = getEndpoint('/api/profiles');
     console.log(`[API] Creating profile at: ${targetUrl}`);
     try {
         const res = await fetch(targetUrl, {
@@ -74,8 +80,7 @@ export async function updateClientProfile(id: string, formData: FormData) {
         console.error("updateClientProfile: ID is missing!");
         return { success: false, error: "Missing ID" };
     }
-    // Force relative path on client
-    const targetUrl = isBrowser ? `/api/profiles/${id}` : `${API_BASE}/api/profiles/${id}`;
+    const targetUrl = getEndpoint(`/api/profiles/${id}`);
     console.log(`[API] Updating profile ${id} at: ${targetUrl}`);
 
     try {

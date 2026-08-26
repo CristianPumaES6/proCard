@@ -11,12 +11,16 @@ async function main() {
     await prisma.profile.deleteMany()
     await prisma.user.deleteMany()
 
-    // --- CRISTIAN PUMA (TECH) ---
+    const adminName = process.env.ADMIN_NAME || "Cristian Puma";
+    const adminEmail = process.env.ADMIN_EMAIL || "cristian.puma.es6@gmail.com";
+    const adminPassword = process.env.ADMIN_PASSWORD || "AdminPassword123!";
+
+    // --- CRISTIAN PUMA / ADMIN (TECH) ---
     const userCristian = await prisma.user.create({
         data: {
-            name: "Cristian Puma",
-            email: "cristian.puma.es6@gmail.com",
-            password: await import('bcryptjs').then(bcrypt => bcrypt.hash('123456', 10)) // Optional: add a password
+            name: adminName,
+            email: adminEmail,
+            password: await import('bcryptjs').then(bcrypt => bcrypt.hash(adminPassword, 10))
         }
     })
 
@@ -25,11 +29,11 @@ async function main() {
             userId: userCristian.id,
             slug: "cristian-puma",
             industry: "Tech",
-            name: "Cristian Angel Puma Villalva",
+            name: adminName === "Cristian Puma" ? "Cristian Angel Puma Villalva" : adminName,
             headline: "Desarrollador OutSystems & Full Stack",
             location: "Lima, Perú",
             bio: "Desarrollador con más de 7 años de experiencia en arquitectura, integraciones API/REST, optimización de bases de datos y desarrollo web/móvil.",
-            email: "cristian.puma.es6@gmail.com",
+            email: adminEmail,
             phone: "+51 976 873 362",
             goal: "Aspirante a OutSystems MVP",
             attributes: {
@@ -43,7 +47,7 @@ async function main() {
                     { platform: "LinkedIn", url: "https://www.linkedin.com/in/cpv01/", iconName: "Linkedin" },
                     { platform: "GitHub", url: "https://github.com/cristianPumaEs6", iconName: "Github" },
                     { platform: "YouTube", url: "https://www.youtube.com/@cristianPumaEs6", iconName: "Youtube" },
-                    { platform: "Email", url: "mailto:cristian.puma.es6@gmail.com", iconName: "Mail" }
+                    { platform: "Email", url: `mailto:${adminEmail}`, iconName: "Mail" }
                 ]
             },
             experiences: {

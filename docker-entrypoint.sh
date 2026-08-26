@@ -23,5 +23,10 @@ if [ "$RUN_SEED" = "true" ]; then
   npx prisma db seed || echo "!! Seed falló o ya estaba aplicado, se continúa."
 fi
 
+if [ -f "./scripts/create-admin.js" ]; then
+  echo "==> proCard: asegurando usuario administrador..."
+  node ./scripts/create-admin.js || echo "!! No se pudo inicializar admin automáticamente."
+fi
+
 echo "==> proCard: iniciando servidor Next.js en el puerto ${PORT:-3000}..."
 exec npx next start -p "${PORT:-3000}"

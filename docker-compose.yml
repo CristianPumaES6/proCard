@@ -23,6 +23,10 @@ services:
       # --- NextAuth ---
       AUTH_SECRET: "${AUTH_SECRET:?Define AUTH_SECRET en tu .env}"
       AUTH_TRUST_HOST: "true"
+      # --- Credenciales de Administrador ---
+      ADMIN_NAME: "${ADMIN_NAME:-Cristian Puma}"
+      ADMIN_EMAIL: "${ADMIN_EMAIL:-cristian.puma.es6@gmail.com}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-AdminPassword123!}"
       # --- Google OAuth (opcional; el login por credenciales funciona sin esto) ---
       AUTH_GOOGLE_ID: "${AUTH_GOOGLE_ID:-}"
       AUTH_GOOGLE_SECRET: "${AUTH_GOOGLE_SECRET:-}"

@@ -146,12 +146,25 @@ export function TechView({ profile, onNext, onPrev, hasMultiple }: { profile: an
                             <div className="relative h-full flex flex-col">
                                 {/* Image Viewer area */}
                                 <div className="relative h-[240px] w-full overflow-hidden bg-zinc-900 group-inner aspect-video">
+                                {activeProject.imageUrl ? (
                                     <img
-                                        src={activeProject.imageUrl || '/placeholder-project.jpg'}
+                                        src={activeProject.imageUrl}
                                         alt={activeProject.title}
                                         className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-105"
+                                        onError={(e) => {
+                                            (e.currentTarget as HTMLImageElement).src = '/placeholder-project.jpg';
+                                        }}
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b10] via-transparent to-transparent" />
+                                ) : (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-zinc-900 via-slate-900 to-zinc-950 p-6 text-center">
+                                        <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-2 text-cyan-400">
+                                            <Code size={26} />
+                                        </div>
+                                        <span className="font-mono text-sm text-zinc-300 font-semibold">{activeProject.title}</span>
+                                        <span className="text-xs text-zinc-500 mt-0.5">{activeProject.client || 'System Architecture'}</span>
+                                    </div>
+                                )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0b10] via-transparent to-transparent pointer-events-none" />
 
                                     {/* Navigation Overlay */}
                                     <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">

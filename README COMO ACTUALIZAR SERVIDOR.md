@@ -100,13 +100,13 @@ Para que tu web sea accesible desde el puerto 80 (HTTP) en lugar del 3000.
     ```nginx
     server {
         listen 80;
-        server_name procard.outsystems.club outsystems.club; # Tu dominio aquí
+        server_name procard.iaper.us; # Tu dominio aquí
 
         # AUMENTAR LÍMITE DE SUBIDA (Importante para evitar error 413)
         client_max_body_size 25M;
 
         location / {
-            proxy_pass http://localhost:2000; # El puerto de tu .env
+            proxy_pass http://localhost:14021; # El puerto de tu .env
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection 'upgrade';
@@ -122,14 +122,6 @@ Para que tu web sea accesible desde el puerto 80 (HTTP) en lugar del 3000.
     sudo nginx -t
     sudo systemctl restart nginx
     ```
-    ```
-
-3.  Activar el sitio y reiniciar Nginx:
-    ```bash
-    sudo ln -s /etc/nginx/sites-available/procard /etc/nginx/sites-enabled/
-    sudo nginx -t
-    sudo systemctl restart nginx
-    ```
 
 ## 6. (Opcional) Activar HTTPS con Certbot
 
@@ -137,11 +129,8 @@ Para tener el candado de seguridad:
 
 ```bash
 sudo apt install certbot python3-certbot-nginx -y
-sudo certbot --nginx -d procard.outsystems.club outsystems.club
-
-sudo certbot --nginx -d  outsystems.club
+sudo certbot --nginx -d procard.iaper.us
 ```
-sudo certbot --nginx -d procard.outsystems.club -d outsystems.club
 ---
 
 ## Comandos Útiles para Mantenimiento
